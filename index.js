@@ -93,6 +93,10 @@ app.delete('/api/persons/:id', (request, response) => {
 
 })
 
+app.get('/', (request, response) => {
+  response.send('<h1>Hello world!</h1>')
+})
+
 app.get('/info', (request, response) => {
   const currentDate = new Date()
   response.send(`Phonebook has info for 2 people <p> ${currentDate}</p>`)

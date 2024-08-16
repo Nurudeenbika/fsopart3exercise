@@ -1,7 +1,9 @@
+require('dotenv').config()
 const express = require('express');
 const app = express();
 var morgan = require('morgan')
 const cors = require('cors')
+const Person = require('./models/person')
 
 app.use(express.json())
 morgan('tiny')
@@ -31,6 +33,23 @@ let persons = [
   }
 ]
 
+const mongoose = require('mongoose')
+
+const password = process.argv[2]
+
+const url = process.env.MONGODB_URI;
+
+mongoose.set('strictQuery',false)
+mongoose.connect(url)
+
+const personSchema = new mongoose.Schema({
+  name: String,
+  number: String,
+})
+
+
+
+
 morgan.token('body', (req, res) => JSON.stringify(req.body))
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
@@ -47,8 +66,7 @@ app.post('/api/persons', (request, response) => {
   body = request.body
 
  
-
-  if (!body.name || !body.number) {
+  if (!body.name || !body.number === undefined) {
     return response.status(400).json({
       error: 'name or number missing'
     })
@@ -60,30 +78,25 @@ app.post('/api/persons', (request, response) => {
       error: 'name must be unique'
     })
   } 
-  const person = {
-    id: generateId(),
+  const person = new Person({
     name: body.name,
     number: String(body.number)
-   
-  }
-
-  persons = persons.concat(person)
-
-  response.json(person)
+  })
+  person.save().then(savePerson => {
+    response.json(savePerson)
+  })
 })
 
 app.get('/api/persons', (request, response) => {
+  Person.find({}).then(persons => {
     response.json(persons)
+  })
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  const id = request.params.id
-  const person = persons.find(person => person.id === id)
-  if (person) {
+  Person.findById(request.params.id).then(person => {
     response.json(person)
-  } else {
-    response.status(404).end()
-  }
+  })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -92,6 +105,14 @@ app.delete('/api/persons/:id', (request, response) => {
 
   response.status(204).end()
 
+})
+
+personSchema.set('toJSON', {
+  transform: (document, returnedObject) => {
+    returnedObject.id = returnedObject._id.toString()
+    delete returnedObject._id
+    delete returnedObject.__v
+  }
 })
 
 app.get('/', (request, response) => {
@@ -103,7 +124,7 @@ app.get('/info', (request, response) => {
   response.send(`Phonebook has info for 2 people <p> ${currentDate}</p>`)
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })

@@ -32,7 +32,6 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :b
 app.post('/api/persons', (request, response, next) => {
   body = request.body;
 
- 
   if (body.name || body.number === undefined) {
     return response.status(400).json({
       error: 'name or number missing'
@@ -49,6 +48,7 @@ app.post('/api/persons', (request, response, next) => {
     name: body.name,
     number: body.number
   })
+
   person.save().then(savePerson => {
     response.json(savePerson);
   })
@@ -57,11 +57,6 @@ app.post('/api/persons', (request, response, next) => {
 
 app.put('/api/persons/:id', (request, response, next) => {
   const { name, number } = request.body
-
-  const person = {
-    name: body.name,
-    number: body.number,
-  }
 
   Person.findByIdAndUpdate(request.params.id, 
     { name, number }, { new: true, runValidators: true, context: 'query' })
